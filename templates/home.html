@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        }
+        h1 {
+            font-size: 3.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        p {
+            font-size: 1.2em;
+            color: #34495e;
+            margin-bottom: 40px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to SysML</h1>
+    <p>Your platform for advanced machine learning tasks.</p>
+    <button onclick="window.location.href='/upload/'">Start Task</button>
+</body>
+</html>

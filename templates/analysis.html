@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analysis</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .analysis-button {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .analysis-button:hover {
+            background-color: #34495e;
+            transform: translateY(-2px);
+        }
+        .analysis-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-area, .error-area {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        .result-message {
+            font-size: 1.2em;
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+        .download-link {
+            font-size: 1em;
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .download-link:hover {
+            color: #2980b9;
+        }
+        .error-message {
+            font-size: 1.2em;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Data Analysis Page</h1>
+    <button id="analysis-button" class="analysis-button">Run Data Analysis</button>
+
+    <!-- Area for displaying results and download link -->
+    <div id="result-area" class="result-area">
+        <div id="result-message" class="result-message"></div>
+        <a id="download-link" class="download-link">Click to Download Results</a>
+    </div>
+
+    <!-- Area for displaying error messages -->
+    <div id="error-area" class="error-area">
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const analysisButton = document.getElementById('analysis-button');
+            const resultArea = document.getElementById('result-area');
+            const resultMessage = document.getElementById('result-message');
+            const downloadLink = document.getElementById('download-link');
+            const errorArea = document.getElementById('error-area');
+            const errorMessage = document.getElementById('error-message');
+
+            // Get project_dir from URL parameters
+            const projectDir = new URLSearchParams(window.location.search).get('project_dir');
+
+            if (!projectDir) {
+                errorMessage.textContent = 'Project path not found. Please upload data again.';
+                errorArea.style.display = 'block';
+                analysisButton.disabled = true;
+                return;
+            }
+
+            // Trigger data analysis on button click
+            analysisButton.addEventListener('click', function () {
+                // Disable button and show loading state
+                analysisButton.disabled = true;
+                analysisButton.textContent = 'Analyzing...';
+
+                // Send request to backend
+                fetch('/start_analysis/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ project_dir: projectDir })  // Pass project path
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Display result message and download link
+                        resultMessage.textContent = data.message;
+                        downloadLink.href = data.download_url;
+                        resultArea.style.display = 'block';
+                    } else {
+                        errorMessage.textContent = 'Data analysis failed: ' + data.message;
+                        errorArea.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessage.textContent = 'Data analysis failed. Please check your network or contact the administrator.';
+                    errorArea.style.display = 'block';
+                })
+                .finally(() => {
+                    // Restore button state
+                    analysisButton.disabled = false;
+                    analysisButton.textContent = 'Run Data Analysis';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

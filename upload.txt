@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传</title>
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .button-group button {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+
+        .success-icon {
+            color: green;
+            font-size: 20px;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .checkbox-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #project-name {
+            width: 200px; /* 调整为你需要的宽度 */
+        }
+    </style>
+</head>
+<body>
+<h1>请上传文件</h1>
+<form id="uploadForm" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- 项目名输入框 -->
+    <div class="form-group">
+        <label for="project-name">项目名:</label>
+        <input type="text" id="project-name" name="project-name" placeholder="项目名" required class="short-input">
+    </div>
+
+    <!-- 分割线 -->
+    <div class="divider">
+        <span>------------------------** 文件上传 **------------------------</span>
+    </div>
+
+    <!-- 训练集矩阵文件上传 -->
+    <div class="form-group">
+        <label for="matrix-file">训练集矩阵文件 (.CSV):</label>
+        <input type="file" id="matrix-file" name="matrix-file" accept=".csv" required>
+    </div>
+
+    <!-- 训练集标签文件上传 -->
+    <div class="form-group">
+        <label for="label-file">训练集标签文件 (.CSV):</label>
+        <input type="file" id="label-file" name="label-file" accept=".csv" required>
+    </div>
+
+    <!-- 分割线 -->
+    <div class="divider">
+        <span>------------------------** 参数设置 **------------------------</span>
+    </div>
+
+    <!-- 参数设置 -->
+    <div class="form-group">
+        <label>数据基础信息:</label>
+        <div class="checkbox-group">
+            <label><input type="checkbox" name="HadLabel" checked> 是否具有标签数据</label>
+            <label><input type="checkbox" name="HadTest" id="hadTestCheckbox" checked> 是否具有测试集数据</label>
+            <!-- 如果不执行推荐，到时候给出可选项，要么全跑，要么用户指定自己感兴趣的塞法 -->
+            <label><input type="checkbox" name="Recommend" id="RecommendCheckbox" checked>
+                是否进行预处理及算法推荐</label>
+            <div id="recommendOptions" class="form-group" style="display: none; margin-left: 2em;">
+                <label><input type="radio" name="recommendOption" value="all" checked> 使用全部模式</label>
+                <label><input type="radio" name="recommendOption" value="custom"> 使用自定义预处理模式</label>
+            </div>
+            <div id="customPreprocessingOptions" class="form-group" style="display: none; margin-left: 4em;">
+                <div>
+                    <label>缺失值处理方法（可多选）：</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="missingValueMethod" value="Mean"> Mean</label>
+                        <label><input type="checkbox" name="missingValueMethod" value="MI"> MI</label>
+                        <label><input type="checkbox" name="missingValueMethod" value="KNN"> KNN</label>
+                        <label><input type="checkbox" name="missingValueMethod" value="None"> None</label>
+                    </div>
+                </div>
+                <div>
+                    <label>标准化处理方法（可多选）：</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="normalizationMethod" value="None"> None</label>
+                        <label><input type="checkbox" name="normalizationMethod" value="MinMax"> MinMax</label>
+                        <label><input type="checkbox" name="normalizationMethod" value="Zscore"> Zscore</label>
+                        <label><input type="checkbox" name="normalizationMethod" value="lg"> lg</label>
+                        <label><input type="checkbox" name="normalizationMethod" value="RobustScaler">
+                            RobustScaler</label>
+                        <label><input type="checkbox" name="normalizationMethod" value="MaxAbs"> MaxAbs</label>
+                        <label><input type="checkbox" name="normalizationMethod" value="PowerTransformer">
+                            PowerTransformer</label>
+                    </div>
+                </div>
+            </div>
+            <label><input type="checkbox" name="MLAnalysis" id="mlAnalysisCheckbox" checked> 执行机器学习</label>
+            <label><input type="checkbox" name="SurvivalAnalysis" id="survivalAnalysisCheckbox">
+                执行生存分析</label>
+        </div>
+
+        <!-- 测试集矩阵文件上传 -->
+        <div class="form-group" id="testMatrixUpload" class="hidden">
+            <label for="test-matrix-file">测试集矩阵文件 (CSV):</label>
+            <input type="file" id="test-matrix-file" name="test-matrix-file" accept=".csv">
+        </div>
+
+        <!-- 测试集标签文件上传 -->
+        <div class="form-group" id="testLabelUpload" class="hidden">
+            <label for="test-label-file">测试集标签文件 (CSV):</label>
+            <input type="file" id="test-label-file" name="test-label-file" accept=".csv">
+        </div>
+    </div>
+
+    <!-- 分割线 -->
+    <div id="mlSettings" class="form-group">
+        <div class="divider">
+            <span>------------------------** 机器学习相关参数设置 **------------------------</span>
+        </div>
+
+        <div class="form-group">
+            <label>机器学习训练选项:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="LoadUni" checked> 是否基于单因素分析结果提取有意义变量进入后续机器学习</label>
+                <label>请选择要执行的机器学习方法（至少选择一个）:</label>
+                <div style="margin-left: 2em;"> <!-- 2em 表示两个字符的宽度 -->
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="Boruta"> Boruta</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="GaussianNB"> GaussianNB</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="GBDT"> GBDT</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="LASSO"> LASSO</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="Logit"> Logit</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="NeuralNetwork"> Neural Network</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="PLSDA"> PLS-DA</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="RandomForest"> Random Forest</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="ML_Methods" value="Xgboost"> Xgboost</label>
+                    </div>
+                </div>
+            </div>
+            <label><input type="checkbox" name="Ensemble" id="ensembleCheckbox" checked> 是否进行集成学习</label>
+            <label><input type="checkbox" name="Imbalance"> 是否存在标签不平衡</label>
+            <label><input type="checkbox" name="ML_Plotting" id="mlPlottingCheckbox" checked>
+                是否可视化机器学习结果</label>
+            <label><input type="checkbox" name="Unsup_analysis"> 是否同时进行非监督学习</label>
+        </div>
+        <label for="CV">Cross-Validation Folds:</label>
+        <input type="number" name="CV" value="10" min="2" required>
+    </div>
+    </div>
+
+    <!-- 分割线 -->
+    <div id="saSettings" class="form-group" style="display: none;">
+        <div class="divider">
+            <span>------------------------** 生存分析相关参数设置 **------------------------</span>
+        </div>
+
+        <div class="form-group">
+            <label>生存分析选项:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="SA_cofactor"> 是否需要控制混杂因素</label>
+                <label><input type="checkbox" name="LoadSAUni" checked> 是否基于单因素分析结果提取有意义变量进入后续生存分析</label>
+                <label><input type="checkbox" name="SA_Plotting" checked> 是否可视化生存分析结果</label>
+            </div>
+            <label for="SA_cofactor_list">混杂因素列表（”;“分隔）:</label>
+            <input type="text" name="SA_cofactor_list" id="SA_cofactor_list" value="" readonly>
+            <button type="button" id="addFactorButton">添加指标</button>
+            <p id="errorMessage" style="color: red; display: none;">仅支持英文字符！</p>
+        </div>
+        <label for="CV">Cross-Validation Folds:</label>
+        <input type="number" name="CV" value="10" min="2" required>
+    </div>
+
+    <button type="submit">上传并分析</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        //////------- 是否有测试集交互按钮 -----------
+        const hadTestCheckbox = document.getElementById('hadTestCheckbox');
+        const testMatrixUpload = document.getElementById('testMatrixUpload');
+        const testLabelUpload = document.getElementById('testLabelUpload');
+
+        function toggleTestUpload() {
+            if (hadTestCheckbox.checked) {
+                testMatrixUpload.classList.remove('hidden');
+                testLabelUpload.classList.remove('hidden');
+            } else {
+                testMatrixUpload.classList.add('hidden');
+                testLabelUpload.classList.add('hidden');
+            }
+        }
+
+        toggleTestUpload(); // 页面加载时初始化
+        hadTestCheckbox.addEventListener('change', toggleTestUpload);
+
+        //////------- 是否推荐 -----------
+        const recommendCheckbox = document.getElementById('RecommendCheckbox');
+        const recommendOptionsContainer = document.getElementById('recommendOptions');
+        const customPreprocessingContainer = document.getElementById('customPreprocessingOptions');
+
+        // 检查是否推荐的状态
+        function checkRecommendState() {
+            if (!recommendCheckbox.checked) {
+                recommendOptionsContainer.style.display = 'block'; // 显示选项
+            } else {
+                recommendOptionsContainer.style.display = 'none'; // 隐藏选项
+            }
+        }
+
+        // 检查自定义预处理模式是否被选中
+        function checkCustomPreprocessingState() {
+            const customRadio = document.querySelector('input[name="recommendOption"]:checked');
+            if (customRadio && customRadio.value === 'custom') {
+                customPreprocessingContainer.style.display = 'block'; // 显示自定义预处理选项
+            } else {
+                customPreprocessingContainer.style.display = 'none'; // 隐藏自定义预处理选项
+            }
+        }
+
+        // 添加事件监听器
+        recommendCheckbox.addEventListener('change', checkRecommendState);
+        document.querySelectorAll('input[name="recommendOption"]').forEach(radio => {
+            radio.addEventListener('change', checkCustomPreprocessingState);
+        });
+
+        // 页面加载时初始化
+        checkRecommendState();
+        checkCustomPreprocessingState();
+
+        //////------- 是否集成 进行集成学习则必须可视化单机器学习结果 -----------
+        const ensembleCheckbox = document.getElementById('ensembleCheckbox');
+        const mlPlottingCheckbox = document.getElementById('mlPlottingCheckbox');
+
+        ensembleCheckbox.addEventListener('change', function () {
+            if (ensembleCheckbox.checked) {
+                mlPlottingCheckbox.checked = true;
+                mlPlottingCheckbox.disabled = true;
+            } else {
+                mlPlottingCheckbox.disabled = false;
+            }
+        });
+
+        if (ensembleCheckbox.checked) {
+            mlPlottingCheckbox.checked = true;
+            mlPlottingCheckbox.disabled = true;
+        }
+
+        //////------- 生存分析中混杂因素输入控制-----------
+        const inputField = document.getElementById('SA_cofactor_list');
+        const addFactorButton = document.getElementById('addFactorButton');
+        const errorMessage = document.getElementById('errorMessage');
+        inputField.addEventListener('input', function () {
+            const value = inputField.value;
+            // 正则表达式：仅允许英文字符和分号
+            if (!/^[a-zA-Z;]*$/.test(value)) {
+                errorMessage.style.display = 'block'; // 显示错误提示
+                inputField.value = value.replace(/[^a-zA-Z;]/g, ''); // 清除非英文字符
+            } else {
+                errorMessage.style.display = 'none'; // 隐藏错误提示
+            }
+        });
+
+        addFactorButton.addEventListener('click', function () {
+            const newFactor = prompt('请输入新的指标（仅支持英文）：');
+            if (newFactor && /^[a-zA-Z]+$/.test(newFactor)) {
+                const currentValue = inputField.value;
+                if (currentValue) {
+                    inputField.value = `${currentValue};${newFactor}`; // 添加分号分隔
+                } else {
+                    inputField.value = newFactor; // 直接添加
+                }
+            } else if (newFactor) {
+                alert('仅支持英文字符！');
+            }
+        });
+
+        //////------- 机器学习和生存分析只能选择一个，同时控制参数设置部分的显示与隐藏 -----------
+        const mlAnalysisCheckbox = document.getElementById('mlAnalysisCheckbox');
+        const survivalAnalysisCheckbox = document.getElementById('survivalAnalysisCheckbox');
+        const mlSettings = document.getElementById('mlSettings');
+        const saSettings = document.getElementById('saSettings');
+
+        function updateSettings() {
+            // 如果勾选了机器学习
+            if (mlAnalysisCheckbox.checked) {
+                survivalAnalysisCheckbox.checked = false; // 取消生存分析的勾选
+                survivalAnalysisCheckbox.disabled = true; // 禁用生存分析
+                mlSettings.style.display = 'block'; // 显示机器学习参数设置
+                saSettings.style.display = 'none'; // 隐藏生存分析参数设置
+            } else {
+                survivalAnalysisCheckbox.disabled = false; // 启用生存分析
+                mlSettings.style.display = 'none'; // 隐藏机器学习参数设置
+            }
+
+            // 如果勾选了生存分析
+            if (survivalAnalysisCheckbox.checked) {
+                mlAnalysisCheckbox.checked = false; // 取消机器学习的勾选
+                mlAnalysisCheckbox.disabled = true; // 禁用机器学习
+                saSettings.style.display = 'block'; // 显示生存分析参数设置
+                mlSettings.style.display = 'none'; // 隐藏机器学习参数设置
+            } else {
+                mlAnalysisCheckbox.disabled = false; // 启用机器学习
+                saSettings.style.display = 'none'; // 隐藏生存分析参数设置
+            }
+        }
+
+        // 初始化状态
+        updateSettings();
+        mlAnalysisCheckbox.addEventListener('change', updateSettings);
+        survivalAnalysisCheckbox.addEventListener('change', updateSettings);
+
+        //////------- 获取表单元素 -----------
+        document.getElementById('uploadForm').addEventListener('submit', (event) => {
+            event.preventDefault(); // 阻止默认提交行为
+
+            // 创建 FormData 对象
+            const formData = new FormData(uploadForm);
+
+            // 发送请求到后端
+            fetch('upload_data/', { // 替换为你的后端接口地址
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.redirected) {
+                        // 如果后端返回重定向响应，跳转到指定页面
+                        window.location.href = response.url;
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    if (data) {
+                        alert(data.message); // 显示后端返回的消息
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('上传失败，请检查网络或联系管理员');
+                });
+        });
+    });
+</script>
+
+{% if message %}
+    <p>{{ message }}</p>
+    {% if file_url %}
+        <p>文件地址: <a href="{{ file_url }}">{{ file_url }}</a></p>
+    {% endif %}
+{% endif %}
+</body>
+</html>

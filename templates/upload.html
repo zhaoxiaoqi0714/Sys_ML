@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="text"], input[type="file"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .success-icon {
+            color: #27ae60;
+            font-size: 1.2em;
+            margin-left: 10px;
+            display: none;
+        }
+        .checkbox-group label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        #project-name {
+            width: 200px;
+        }
+        #errorMessage {
+            color: #e74c3c;
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Files</h1>
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Project Name Input -->
+        <div class="form-group">
+            <label for="project-name">Project Name:</label>
+            <input type="text" id="project-name" name="project-name" placeholder="Enter project name" required>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider">
+            <span>------------------------** File Upload **------------------------</span>
+        </div>
+
+        <!-- Training Set Matrix File Upload -->
+        <div class="form-group">
+            <label for="matrix-file">Training Set Matrix File (.CSV):</label>
+            <input type="file" id="matrix-file" name="matrix-file" accept=".csv" required>
+        </div>
+
+        <!-- Training Set Label File Upload -->
+        <div class="form-group">
+            <label for="label-file">Training Set Label File (.CSV):</label>
+            <input type="file" id="label-file" name="label-file" accept=".csv" required>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider">
+            <span>------------------------** Parameter Settings **------------------------</span>
+        </div>
+
+        <!-- Parameter Settings -->
+        <div class="form-group">
+            <label>Basic Data Information:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="HadLabel" checked> Has Label Data</label>
+                <label><input type="checkbox" name="HadTest" id="hadTestCheckbox" checked> Has Test Set Data</label>
+                <label><input type="checkbox" name="Recommend" id="RecommendCheckbox" checked> Perform Preprocessing and Algorithm Recommendation</label>
+                <div id="recommendOptions" class="form-group" style="display: none; margin-left: 2em;">
+                    <label><input type="radio" name="recommendOption" value="all" checked> Use All Modes</label>
+                    <label><input type="radio" name="recommendOption" value="custom"> Use Custom Preprocessing</label>
+                </div>
+                <div id="customPreprocessingOptions" class="form-group" style="display: none; margin-left: 4em;">
+                    <div>
+                        <label>Missing Value Handling (Multiple Selection):</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="missingValueMethod" value="Mean"> Mean</label>
+                            <label><input type="checkbox" name="missingValueMethod" value="MI"> MI</label>
+                            <label><input type="checkbox" name="missingValueMethod" value="KNN"> KNN</label>
+                            <label><input type="checkbox" name="missingValueMethod" value="None"> None</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Normalization Methods (Multiple Selection):</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="normalizationMethod" value="None"> None</label>
+                            <label><input type="checkbox" name="normalizationMethod" value="MinMax"> MinMax</label>
+                            <label><input type="checkbox" name="normalizationMethod" value="Zscore"> Zscore</label>
+                            <label><input type="checkbox" name="normalizationMethod" value="lg"> lg</label>
+                            <label><input type="checkbox" name="normalizationMethod" value="RobustScaler"> RobustScaler</label>
+                            <label><input type="checkbox" name="normalizationMethod" value="MaxAbs"> MaxAbs</label>
+                            <label><input type="checkbox" name="normalizationMethod" value="PowerTransformer"> PowerTransformer</label>
+                        </div>
+                    </div>
+                </div>
+                <label><input type="checkbox" name="MLAnalysis" id="mlAnalysisCheckbox" checked> Perform Machine Learning</label>
+                <label><input type="checkbox" name="SurvivalAnalysis" id="survivalAnalysisCheckbox"> Perform Survival Analysis</label>
+            </div>
+
+            <!-- Test Set Matrix File Upload -->
+            <div class="form-group" id="testMatrixUpload" class="hidden">
+                <label for="test-matrix-file">Test Set Matrix File (.CSV):</label>
+                <input type="file" id="test-matrix-file" name="test-matrix-file" accept=".csv">
+            </div>
+
+            <!-- Test Set Label File Upload -->
+            <div class="form-group" id="testLabelUpload" class="hidden">
+                <label for="test-label-file">Test Set Label File (.CSV):</label>
+                <input type="file" id="test-label-file" name="test-label-file" accept=".csv">
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <div id="mlSettings" class="form-group">
+            <div class="divider">
+                <span>------------------------** Machine Learning Parameter Settings **------------------------</span>
+            </div>
+
+            <div class="form-group">
+                <label>Machine Learning Training Options:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="LoadUni" checked> Extract Significant Variables Based on Univariate Analysis</label>
+                    <label>Select Machine Learning Methods (Choose at Least One):</label>
+                    <div style="margin-left: 2em;">
+                        <div><label><input type="checkbox" name="ML_Methods" value="Boruta"> Boruta</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="GaussianNB"> GaussianNB</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="GBDT"> GBDT</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="LASSO"> LASSO</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="Logit"> Logit</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="NeuralNetwork"> Neural Network</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="PLSDA"> PLS-DA</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="RandomForest"> Random Forest</label></div>
+                        <div><label><input type="checkbox" name="ML_Methods" value="Xgboost"> Xgboost</label></div>
+                    </div>
+                </div>
+                <label><input type="checkbox" name="Ensemble" id="ensembleCheckbox" checked> Perform Ensemble Learning</label>
+                <label><input type="checkbox" name="Imbalance"> Has Imbalanced Labels</label>
+                <label><input type="checkbox" name="ML_Plotting" id="mlPlottingCheckbox" checked> Visualize Machine Learning Results</label>
+                <input type="hidden" name="ML_Plotting" value="on" id="mlPlottingHidden">
+                <label><input type="checkbox" name="Unsup_analysis"> Perform Unsupervised Learning</label>
+            </div>
+            <label for="CV">Cross-Validation Folds:</label>
+            <input type="number" name="CV" value="10" min="2" required>
+        </div>
+
+        <!-- Divider -->
+        <div id="saSettings" class="form-group" style="display: none;">
+            <div class="divider">
+                <span>------------------------** Survival Analysis Parameter Settings **------------------------</span>
+            </div>
+
+            <div class="form-group">
+                <label>Survival Analysis Options:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="SA_cofactor"> Control for Confounding Factors</label>
+                    <label><input type="checkbox" name="LoadSAUni" checked> Extract Significant Variables Based on Univariate Analysis</label>
+                    <label><input type="checkbox" name="SA_Plotting" checked> Visualize Survival Analysis Results</label>
+                </div>
+                <label for="SA_cofactor_list">Confounding Factors List (Separated by ";"):</label>
+                <input type="text" name="SA_cofactor_list" id="SA_cofactor_list" value="" readonly>
+                <button type="button" id="addFactorButton">Add Factor</button>
+                <p id="errorMessage">Only English characters are allowed!</p>
+            </div>
+            <label for="CV">Cross-Validation Folds:</label>
+            <input type="number" name="CV" value="10" min="2" required>
+        </div>
+
+        <button type="submit">Upload and Analyze</button>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Toggle Test Set Upload
+            const hadTestCheckbox = document.getElementById('hadTestCheckbox');
+            const testMatrixUpload = document.getElementById('testMatrixUpload');
+            const testLabelUpload = document.getElementById('testLabelUpload');
+
+            function toggleTestUpload() {
+                if (hadTestCheckbox.checked) {
+                    testMatrixUpload.classList.remove('hidden');
+                    testLabelUpload.classList.remove('hidden');
+                } else {
+                    testMatrixUpload.classList.add('hidden');
+                    testLabelUpload.classList.add('hidden');
+                }
+            }
+
+            toggleTestUpload();
+            hadTestCheckbox.addEventListener('change', toggleTestUpload);
+
+            // Toggle Recommendation Options
+            const recommendCheckbox = document.getElementById('RecommendCheckbox');
+            const recommendOptionsContainer = document.getElementById('recommendOptions');
+            const customPreprocessingContainer = document.getElementById('customPreprocessingOptions');
+
+            function checkRecommendState() {
+                if (!recommendCheckbox.checked) {
+                    recommendOptionsContainer.style.display = 'block';
+                } else {
+                    recommendOptionsContainer.style.display = 'none';
+                }
+            }
+
+            function checkCustomPreprocessingState() {
+                const customRadio = document.querySelector('input[name="recommendOption"]:checked');
+                if (customRadio && customRadio.value === 'custom') {
+                    customPreprocessingContainer.style.display = 'block';
+                } else {
+                    customPreprocessingContainer.style.display = 'none';
+                }
+            }
+
+            recommendCheckbox.addEventListener('change', checkRecommendState);
+            document.querySelectorAll('input[name="recommendOption"]').forEach(radio => {
+                radio.addEventListener('change', checkCustomPreprocessingState);
+            });
+
+            checkRecommendState();
+            checkCustomPreprocessingState();
+
+            // Toggle Ensemble Learning
+            const ensembleCheckbox = document.getElementById('ensembleCheckbox');
+            const mlPlottingCheckbox = document.getElementById('mlPlottingCheckbox');
+            const mlPlottingHidden = document.getElementById('mlPlottingHidden');
+
+            // 当集成学习被勾选时，强制 ML_Plotting 为 true 并禁用
+            ensembleCheckbox.addEventListener('change', function() {
+                if (ensembleCheckbox.checked) {
+                    mlPlottingCheckbox.checked = true;
+                    mlPlottingCheckbox.disabled = true;
+                    mlPlottingHidden.value = "on"; // 确保提交
+                } else {
+                    mlPlottingCheckbox.disabled = false;
+                    mlPlottingHidden.value = mlPlottingCheckbox.checked ? "on" : "off";
+                }
+            });
+
+            // 初始化
+            if (ensembleCheckbox.checked) {
+                mlPlottingCheckbox.checked = true;
+                mlPlottingCheckbox.disabled = true;
+                mlPlottingHidden.value = "on";
+            }
+
+            // Confounding Factors Input Control
+            const inputField = document.getElementById('SA_cofactor_list');
+            const addFactorButton = document.getElementById('addFactorButton');
+            const errorMessage = document.getElementById('errorMessage');
+
+            inputField.addEventListener('input', function () {
+                const value = inputField.value;
+                if (!/^[a-zA-Z;]*$/.test(value)) {
+                    errorMessage.style.display = 'block';
+                    inputField.value = value.replace(/[^a-zA-Z;]/g, '');
+                } else {
+                    errorMessage.style.display = 'none';
+                }
+            });
+
+            addFactorButton.addEventListener('click', function () {
+                const newFactor = prompt('Enter a new factor (English only):');
+                if (newFactor && /^[a-zA-Z]+$/.test(newFactor)) {
+                    const currentValue = inputField.value;
+                    if (currentValue) {
+                        inputField.value = `${currentValue};${newFactor}`;
+                    } else {
+                        inputField.value = newFactor;
+                    }
+                } else if (newFactor) {
+                    alert('Only English characters are allowed!');
+                }
+            });
+
+            // Toggle Machine Learning and Survival Analysis
+            const mlAnalysisCheckbox = document.getElementById('mlAnalysisCheckbox');
+            const survivalAnalysisCheckbox = document.getElementById('survivalAnalysisCheckbox');
+            const mlSettings = document.getElementById('mlSettings');
+            const saSettings = document.getElementById('saSettings');
+
+            function updateSettings() {
+                if (mlAnalysisCheckbox.checked) {
+                    survivalAnalysisCheckbox.checked = false;
+                    survivalAnalysisCheckbox.disabled = true;
+                    mlSettings.style.display = 'block';
+                    saSettings.style.display = 'none';
+                } else {
+                    survivalAnalysisCheckbox.disabled = false;
+                    mlSettings.style.display = 'none';
+                }
+
+                if (survivalAnalysisCheckbox.checked) {
+                    mlAnalysisCheckbox.checked = false;
+                    mlAnalysisCheckbox.disabled = true;
+                    saSettings.style.display = 'block';
+                    mlSettings.style.display = 'none';
+                } else {
+                    mlAnalysisCheckbox.disabled = false;
+                    saSettings.style.display = 'none';
+                }
+            }
+
+            updateSettings();
+            mlAnalysisCheckbox.addEventListener('change', updateSettings);
+            survivalAnalysisCheckbox.addEventListener('change', updateSettings);
+
+            // Form Submission
+            document.getElementById('uploadForm').addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = new FormData(uploadForm);
+
+                fetch('upload_data/', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => {
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                        } else {
+                            return response.json();
+                        }
+                    })
+                    .then(data => {
+                        if (data) {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Upload failed. Please check your network or contact the administrator.');
+                    });
+            });
+        });
+    </script>
+
+    {% if message %}
+        <p>{{ message }}</p>
+        {% if file_url %}
+            <p>File URL: <a href="{{ file_url }}">{{ file_url }}</a></p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>

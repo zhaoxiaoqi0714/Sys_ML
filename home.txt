@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            text-align: center;
+            margin-top: 20%;
+        }
+        h1 {
+            font-size: 3em;
+            color: blue;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome，欢迎使用SysML</h1>
+    <button onclick="window.location.href='/upload/'">开始任务</button>
+</body>
+</html>

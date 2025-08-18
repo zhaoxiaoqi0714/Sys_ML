@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析</title>
+    <style>
+        .analysis-button {
+            background-color: black;
+            color: red;
+            padding: 20px 40px;
+            font-size: 24px;
+            border: none;
+            cursor: pointer;
+        }
+        .analysis-button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .result-message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+        }
+        .download-link {
+            margin-top: 10px;
+            font-size: 16px;
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .error-message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>数据分析页面</h1>
+    <button id="analysis-button" class="analysis-button">执行数据分析</button>
+
+    <!-- 用于显示提示信息和下载链接的区域 -->
+    <div id="result-area" style="display: none;">
+        <div id="result-message" class="result-message"></div>
+        <a id="download-link" class="download-link">点击下载结果文件</a>
+    </div>
+
+    <!-- 用于显示错误信息的区域 -->
+    <div id="error-area" style="display: none;">
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const analysisButton = document.getElementById('analysis-button');
+            const resultArea = document.getElementById('result-area');
+            const resultMessage = document.getElementById('result-message');
+            const downloadLink = document.getElementById('download-link');
+            const errorArea = document.getElementById('error-area');
+            const errorMessage = document.getElementById('error-message');
+
+            // 从 URL 参数中获取 project_dir
+            const projectDir = new URLSearchParams(window.location.search).get('project_dir');
+
+            if (!projectDir) {
+                errorMessage.textContent = '项目路径未找到，请重新上传数据';
+                errorArea.style.display = 'block';
+                analysisButton.disabled = true;
+                return;
+            }
+
+            // 点击按钮时触发数据分析
+            analysisButton.addEventListener('click', function () {
+                // 禁用按钮并显示加载状态
+                analysisButton.disabled = true;
+                analysisButton.textContent = '分析中...';
+
+                // 发送请求到后端
+                fetch('/start_analysis/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ project_dir: projectDir })  // 传递项目路径
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 显示提示信息和下载链接
+                        resultMessage.textContent = data.message;
+                        downloadLink.href = data.download_url;
+                        resultArea.style.display = 'block';
+                    } else {
+                        errorMessage.textContent = '数据分析启动失败：' + data.message;
+                        errorArea.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessage.textContent = '数据分析启动失败，请检查网络或联系管理员';
+                    errorArea.style.display = 'block';
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    analysisButton.disabled = false;
+                    analysisButton.textContent = '执行数据分析';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
