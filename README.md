@@ -1,6 +1,6 @@
 # Sys_ML Recommendation System
 
-![GitHub Downloads](https://img.shields.io/github/downloads/zhaoxiaoqi0714/SysML/total?style=for-the-badge)
+![GitHub Downloads](https://img.shields.io/github/downloads/zhaoxiaoqi0714/Sys_ML/total?style=for-the-badge)
 
 SysML is a web-based platform designed to simplify robust machine learning workflows for biomedical data. It addresses common challenges like small samples, missing values, and class imbalance by recommending data-adaptive preprocessing and algorithm combinations—backed by systematic benchmarking of hundreds of method pairings. Validated on real-world datasets, SysML boosts both model performance and analytical efficiency, making it a go-to tool for reliable, reproducible biomedicine-focused ML.
 
